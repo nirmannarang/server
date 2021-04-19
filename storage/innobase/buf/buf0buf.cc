@@ -3263,6 +3263,8 @@ of the functions which perform to a block a state transition NOT_USED =>
 FILE_PAGE (the other is buf_page_get_gen).
 @param[in,out]	space		space object
 @param[in]	offset		offset of the tablespace
+				or deferred space id if space
+				object is null
 @param[in]	zip_size	ROW_FORMAT=COMPRESSED page size, or 0
 @param[in,out]	mtr		mini-transaction
 @param[in,out]	free_block	pre-allocated buffer block
@@ -3271,11 +3273,18 @@ buf_block_t*
 buf_page_create(fil_space_t *space, uint32_t offset,
                 ulint zip_size, mtr_t *mtr, buf_block_t *free_block)
 {
-  page_id_t page_id(space->id, offset);
+  page_id_t page_id;
+  if (space)
+  {
+    page_id.set_page_id(space->id, offset);
+    space->free_page(offset, false);
+  }
+  else
+    page_id.set_page_id(offset, 0);
+
   ut_ad(mtr->is_active());
   ut_ad(page_id.space() != 0 || !zip_size);
 
-  space->free_page(offset, false);
   free_block->initialise(page_id, zip_size, 1);
 
   const ulint fold= page_id.fold();

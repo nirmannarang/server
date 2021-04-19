@@ -1082,6 +1082,10 @@ struct fil_node_t final
 	/** Filesystem block size */
 	ulint		block_size;
 
+	/** Deferring the tablespace during recovery and it
+	can be used to skip the validation of page0 */
+	bool		deferred;
+
 	/** FIL_NODE_MAGIC_N */
 	ulint		magic_n;
 
@@ -1114,6 +1118,12 @@ struct fil_node_t final
 
   /** Update the data structures on write completion */
   inline void complete_write();
+
+  /**  Mark the tablespace file as deferred/undeferred */
+  void set_deferred(bool val) { deferred= val; }
+
+  /** @retval whether the tablespace is deferred */
+  bool is_deferred() { return deferred; }
 
 private:
   /** Does stuff common for close() and detach() */
@@ -1684,7 +1694,9 @@ enum fil_load_status {
 	/** The file(s) were not found */
 	FIL_LOAD_NOT_FOUND,
 	/** The file(s) were not valid */
-	FIL_LOAD_INVALID
+	FIL_LOAD_INVALID,
+	/** The tablespace file was deferred to open */
+	FIL_LOAD_DEFER
 };
 
 /** Open a single-file tablespace and add it to the InnoDB data structures.

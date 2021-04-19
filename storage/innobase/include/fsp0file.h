@@ -61,6 +61,7 @@ public:
 		m_exists(),
 		m_is_valid(),
 		m_first_page(),
+		m_defer(false),
 		m_last_os_error(),
 		m_file_info()
 	{
@@ -98,6 +99,7 @@ public:
 		m_exists(file.m_exists),
 		m_is_valid(file.m_is_valid),
 		m_first_page(),
+		m_defer(false),
 		m_last_os_error(),
 		m_file_info()
 	{
@@ -324,6 +326,15 @@ public:
 	@return the first data page */
 	const byte* get_first_page() const { return(m_first_page); }
 
+	/** @return whether tablespace is deferred or not */
+	bool is_defer() { return m_defer; }
+
+	/** Set the tablespace as deferred */
+	void set_defer() { m_defer= true; }
+
+	void set_space_id(ulint space_id) { m_space_id= space_id; }
+
+	void set_flags(ulint flags) { m_flags = flags; }
 private:
 	/** Free the filepath buffer. */
 	void free_filepath();
@@ -437,6 +448,9 @@ private:
 
 	/** Aligned buffer to hold first page */
 	byte*			m_first_page;
+
+	/** true if table is deferred during recovery */
+	bool			m_defer;
 
 protected:
 	/** Last OS error received so it can be reported if needed. */
