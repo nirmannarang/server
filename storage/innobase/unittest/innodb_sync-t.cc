@@ -20,8 +20,8 @@
 
 static std::atomic<bool> critical;
 
+ulong srv_n_spin_wait_rounds= 30;
 uint srv_spin_wait_delay= 4;
-uint srv_n_spin_wait_rounds= 30;
 
 constexpr unsigned N_THREADS= 30;
 constexpr unsigned N_ROUNDS= 100;
@@ -62,9 +62,6 @@ static void test_srw_lock()
   }
 }
 
-#ifdef SUX_LOCK_GENERIC
-// FIXME: hang between u_wr_upgrade() and u_lock()
-#else
 static ssux_lock_low ssux;
 
 static void test_ssux_lock()
@@ -135,7 +132,6 @@ static void test_sux_lock()
     }
   }
 }
-#endif
 
 int main(int argc __attribute__((unused)), char **argv)
 {
@@ -167,9 +163,6 @@ int main(int argc __attribute__((unused)), char **argv)
 
   l.destroy();
 
-#ifdef SUX_LOCK_GENERIC
-  // FIXME: hang between u_wr_upgrade() and u_lock()
-#else
   ssux.init();
   for (auto i= N_THREADS; i--; )
     t[i]= std::thread(test_ssux_lock);
@@ -189,5 +182,4 @@ int main(int argc __attribute__((unused)), char **argv)
 
   ok(true, "sux_lock");
   sux.free();
-#endif
 }
