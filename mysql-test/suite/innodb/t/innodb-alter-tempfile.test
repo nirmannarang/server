@@ -12,6 +12,12 @@
 
 --source include/innodb_page_size.inc
 
+call mtr.add_suppression("Cannot find index f2 in InnoDB index dictionary.");
+call mtr.add_suppression("InnoDB indexes are inconsistent with what defined in .frm for table .*");
+call mtr.add_suppression("Table test/t1 contains 1 indexes inside InnoDB, which is different from the number of indexes 2 defined in the MariaDB  .*");
+call mtr.add_suppression("InnoDB could not find key no 1 with name f2 from dict cache for table .*");
+
+
 --echo #
 --echo # Bug #18734396	INNODB IN-PLACE ALTER FAILURES BLOCK FUTURE ALTERS
 --echo #
@@ -42,3 +48,22 @@ show create table t1;
 ALTER TABLE t1 ADD PRIMARY KEY (f2, f1);
 show create table t1;
 drop table t1;
+
+--echo #
+--echo # MDEV-22928 InnoDB fails to fetch index type
+--echo # 	when index mismatch
+--echo #
+CREATE TABLE t1(f1 INT NOT NULL, f2 INT NOT NULL,
+                index(f1), index(f2))ENGINE=InnoDB;
+INSERT INTO t1 VALUES(1, 1), (2, 2);
+
+# Write file to make mysql-test-run.pl expect crash
+--exec echo "wait" > $MYSQLTEST_VARDIR/tmp/mysqld.1.expect
+
+SET DEBUG_DBUG="+d,ib_ddl_crash_after_user_trx_commit";
+--error 2013
+ALTER TABLE t1 DROP INDEX f2, ALGORITHM=INPLACE;
+remove_files_wildcard $datadir/test #sql-*.frm;
+--source include/start_mysqld.inc
+SHOW KEYS FROM t1;
+DROP TABLE t1;
