@@ -286,7 +286,9 @@ rec_init_offsets_comp_ordinary(
 	const unsigned n_core_null_bytes = UNIV_UNLIKELY(index->n_core_fields
 							 != n_core)
 		? UT_BITS_IN_BYTES(unsigned(index->get_n_nullable(n_core)))
-		: index->n_core_null_bytes;
+		: index->table->not_redundant()
+		  ? index->n_core_null_bytes
+		  : UT_BITS_IN_BYTES(index->n_nullable);
 
 	if (mblob) {
 		ut_ad(index->is_dummy || index->table->instant);
@@ -1157,7 +1159,9 @@ rec_get_converted_size_comp_prefix_low(
 						  - n_core_fields);
 	} else {
 		ut_ad(n_fields <= n_core_fields);
-		extra_size += index->n_core_null_bytes;
+		extra_size += redundant_temp
+			      ? UT_BITS_IN_BYTES(index->n_nullable)
+			      : index->n_core_null_bytes;
 	}
 
 	ulint data_size = 0;

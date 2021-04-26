@@ -205,3 +205,38 @@ DROP TABLE t1,t2,t3;
 
 --remove_files_wildcard $MYSQLD_DATADIR/test #sql*.frm
 --list_files $MYSQLD_DATADIR/test
+
+--echo #
+--echo # MDEV-25236 Online log apply fails for redundant row format tables
+--echo #
+CREATE TABLE t4 (col1 INT,col2 INT,col_int INTEGER,col_string INTEGER,
+                 col_varchar VARCHAR(500),col_text TEXT)
+                ROW_FORMAT=REDUNDANT ENGINE = InnoDB;
+ALTER TABLE t4 ADD PRIMARY KEY (col_text(9), col_int);
+ALTER TABLE t4 ADD COLUMN col_int_copy INTEGER, ALGORITHM=INSTANT;
+ALTER TABLE t4 DROP PRIMARY KEY;
+ALTER TABLE t4 ADD COLUMN col_text_copy TEXT, ALGORITHM=INSTANT;
+ALTER TABLE t4 ADD PRIMARY KEY (col_text(9), col_int);
+ALTER TABLE t4 ADD COLUMN col_inTcol_int INTEGER, ALGORITHM=INSTANT;
+ALTER TABLE t4 DROP PRIMARY KEY;
+ALTER TABLE t4 ADD COLUMN col_texTcol_text TEXT, ALGORITHM=INSTANT;
+ALTER TABLE t4 ADD PRIMARY KEY (col_text(9), col_int);
+ALTER TABLE t4 DROP PRIMARY KEY;
+ALTER TABLE t4 MODIFY COLUMN col_text TEXT, ALGORITHM=INSTANT;
+
+set DEBUG_SYNC="innodb_inplace_alter_table_enter SIGNAL alter_phase WAIT_FOR alter_finish";
+--send ALTER TABLE t4 ADD PRIMARY KEY (col_text(9), col_int )
+connect(con1,localhost,root,,);
+set DEBUG_SYNC="now WAIT_FOR alter_phase";
+BEGIN;
+INSERT INTO t4 (col1,col2, col_int, col_string, col_text) VALUES (
+1, 1, 0, REPEAT(SUBSTR(CAST( 1 AS CHAR),1,1), 10),
+REPEAT(SUBSTR(CAST( 1 AS CHAR),1,1), 10000) );
+ROLLBACK;
+set DEBUG_SYNC="now SIGNAL alter_finish";
+connection default;
+reap;
+disconnect con1;
+SELECT * FROM t4;
+DROP TABLE t4;
+SET DEBUG_SYNC=RESET;
