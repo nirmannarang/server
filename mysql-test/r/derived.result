@@ -1204,5 +1204,17 @@ REPLACE INTO v2 ( SELECT * FROM v4 ) UNION ( SELECT f FROM v2 );
 drop view v1,v2,v3,v4;
 drop table t1,t2,t3;
 #
+# MDEV-21603: materialized derived used in SHOW TABLES
+#
+create table t1 (nm varchar(32));
+insert into t1 values ('1'),('2'),('3');
+use mysql;
+show tables
+where tables_in_mysql in (select *
+from (select * from test.t1 group by nm) dt);
+Tables_in_mysql
+use test;
+drop table t1;
+#
 # End of 10.2 tests
 #
