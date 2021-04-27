@@ -482,6 +482,10 @@ trx_pool_init();
 void
 trx_pool_close();
 
+/** @return whether the table has lock on mysql.innodb_table_stats
+and mysql.innodb_index_stats */
+bool trx_has_stats_table_lock(const trx_t *trx);
+
 /**
 Set the transaction as a read-write transaction if it is not already
 tagged as such.

@@ -3072,3 +3072,19 @@ trx_set_rw_mode(
 
 	mutex_exit(&trx_sys->mutex);
 }
+
+bool trx_has_stats_table_lock(const trx_t *trx)
+{
+  for (lock_list::const_iterator it= trx->lock.table_locks.begin(),
+       end= trx->lock.table_locks.end(); it != end; ++it)
+  {
+     const lock_t *lock= *it;
+     if (!lock)
+       continue;
+     dict_table_t *table= lock->un_member.tab_lock.table;
+     if (table->is_stats_table())
+       return true;
+  }
+
+  return false;
+}

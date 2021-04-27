@@ -67,3 +67,23 @@ remove_files_wildcard $datadir/test #sql-*.frm;
 --source include/start_mysqld.inc
 SHOW KEYS FROM t1;
 DROP TABLE t1;
+
+--echo #
+--echo # MDEV-25503 InnoDB hangs on startup during recovery
+--echo #
+CREATE TABLE t1 (a INT PRIMARY KEY) ENGINE=InnoDB STATS_PERSISTENT=1;
+connect (con1,localhost,root,,);
+BEGIN;
+DELETE FROM mysql.innodb_table_stats;
+
+connect (con2,localhost,root,,);
+SET DEBUG_SYNC='inplace_after_index_build SIGNAL blocked WAIT_FOR ever';
+send ALTER TABLE t1 FORCE;
+
+connection default;
+SET DEBUG_SYNC='now WAIT_FOR blocked';
+--let $shutdown_timeout=0
+--source include/restart_mysqld.inc
+SELECT * FROM t1;
+DROP TABLE t1;
+remove_files_wildcard $datadir/test #sql-*.frm;
