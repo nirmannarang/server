@@ -62,7 +62,6 @@ addons:
       - libnuma-dev
       - libpam0g-dev
       - libpcre2-dev
-      - libpmem-dev
       - libreadline-gplv2-dev
       - libsnappy-dev
       - libssl-dev
@@ -72,6 +71,7 @@ addons:
       - psmisc
       - uuid-dev
       - zlib1g-dev
+      #- libpmem-dev
       # libsystemd-daemon-dev # https://github.com/travis-ci/apt-package-whitelist/issues/3882
   homebrew:
     # OSX builds are not properly maintained on Travis-CI nor buildbot and
